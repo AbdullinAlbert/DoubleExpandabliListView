@@ -1,0 +1,19 @@
+<?xml version="1.0" encoding="utf-8"?>
+<LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:tools="http://schemas.android.com/tools"
+    android:orientation="vertical"
+    android:layout_width="match_parent"
+    android:layout_height="wrap_content"
+    android:paddingVertical="8dp">
+    <TextView
+        android:id="@+id/groupChildInvoiceOwnerDescription"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        tools:text="Иванов Иван Иванович" />
+
+    <TextView
+        android:id="@+id/groupChildInvoiceOwnerAddress"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        tools:text="Москва" />
+</LinearLayout>
