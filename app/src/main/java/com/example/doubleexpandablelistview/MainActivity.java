@@ -21,13 +21,14 @@ public class MainActivity extends AppCompatActivity implements SelectedGroupCall
         setContentView(R.layout.activity_main);
         recyclerView = findViewById(R.id.recyclerView);
         myAdapter = new MyAdapter(this);
-        recyclerView.addItemDecoration(new FirsLevelStickyHeaderItemDecoration(recyclerView, myAdapter));
+        recyclerView.addItemDecoration(new FirstLevelStickyHeaderItemDecoration(recyclerView, myAdapter));
         recyclerView.addItemDecoration(
             new DpInvoicesDividerItemDecoration(
                 myAdapter,
                 AppCompatResources.getDrawable(this, R.drawable.dp_invoice_divider)
             )
         );
+        recyclerView.addItemDecoration(new SecondLevelStickyHeaderItemDecoration(myAdapter));
         recyclerView.setAdapter(myAdapter);
         myAdapter.submitList(getAdapterList());
     }
@@ -35,7 +36,7 @@ public class MainActivity extends AppCompatActivity implements SelectedGroupCall
     private List<ReceivableInfo> getAdapterList() {
         int headerCount = 0;
         List<ReceivableInfo> adapterList = new ArrayList<>();
-        for (int i = 0; i < 10; i++)
+        for (int i = 0; i < 50; i++)
             adapterList.add(getDebtorHeaderGroup(headerCount++));
         return adapterList;
     }
@@ -118,6 +119,7 @@ public class MainActivity extends AppCompatActivity implements SelectedGroupCall
                 Log.d(MainActivity.class.getSimpleName(), "clickedGroup: " + e.getLocalizedMessage());
             }
         }
+        recyclerView.invalidateItemDecorations();
         myAdapter.submitList(newAdapterList);
     }
 

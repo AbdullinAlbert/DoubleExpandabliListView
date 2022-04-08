@@ -14,12 +14,15 @@ import androidx.recyclerview.widget.RecyclerView;
 import java.util.List;
 
 public class MyAdapter extends ListAdapter<ReceivableInfo, RecyclerView.ViewHolder>
-    implements FirsLevelStickyHeaderItemDecoration.StickyHeaderInfoProvider, DpInvoicesDividerItemDecoration.ColorItemDividerHelper {
+    implements FirstLevelStickyHeaderItemDecoration.StickyHeaderInfoProvider,
+        DpInvoicesDividerItemDecoration.ColorItemDividerHelper,
+        SecondLevelStickyHeaderItemDecoration.SecondLevelStickyHeaderInfoProvider {
 
     private final int OUTER_GROUP_VIEW_TYPE = 0;
     private final int INNER_GROUP_VIEW_TYPE = 1;
     private final int INNER_GROUP_CHILD_VIEW_TYPE = 2;
     private final SelectedGroupCallback mSelectedGroupCallback;
+    private int firstLevelHeaderHeight = 0;
 
     public static final String TAG = MyAdapter.class.getSimpleName();
 
@@ -113,12 +116,82 @@ public class MyAdapter extends ListAdapter<ReceivableInfo, RecyclerView.ViewHold
             && (nextPosItem instanceof DeliveryPointWithInvoices);
     }
 
-    private static final class OuterGroupViewHolder extends RecyclerView.ViewHolder {
+    @Override
+    public int getSecondLevelHeaderPositionForItem(Integer itemPosition) {
+        int pos = -1;
+        int i = itemPosition;
+        boolean isSecondLevelHeaderFind = false;
+        while (i >= 0 && !isSecondLevelHeaderFind) {
+            isSecondLevelHeaderFind = getItem(i) instanceof RoutePointsInfo;
+            if (isSecondLevelHeaderFind) pos = i;
+            i--;
+        }
+        return pos;
+    }
+
+    @Override
+    public int getSecondLevelHeaderLayout(Integer headerPosition) {
+        return R.layout.inner_group;
+    }
+
+    @Override
+    public void bindSecondLevelHeaderWithData(View header, Integer headerPosition) {
+        if (getCurrentList().size() > headerPosition && getItem(headerPosition) instanceof RoutePointsInfo)  {
+            RoutePointsInfo routePointsInfo = (RoutePointsInfo) getItem(headerPosition);
+            TextView description = header.findViewById(R.id.innerGroupDescription);
+            TextView pdz = header.findViewById(R.id.innerGroupPdz);
+            TextView odz = header.findViewById(R.id.innerGroupOdz);
+            description.setText(routePointsInfo.getDescription());
+            pdz.setText(routePointsInfo.getOverDueReceivableTotal());
+            odz.setText(routePointsInfo.getReceivableTotal());
+        }
+    }
+
+    @Override
+    public int getFirstLevelHeaderHeight(ViewGroup parent) {
+        if (firstLevelHeaderHeight == 0) {
+            View childView = LayoutInflater.from(parent.getContext()).inflate(R.layout.outter_group, parent, false);
+            int parentWidthSpec = View.MeasureSpec.makeMeasureSpec(parent.getWidth(), View.MeasureSpec.EXACTLY);
+            int parentHeightSpec = View.MeasureSpec.makeMeasureSpec(parent.getHeight(), View.MeasureSpec.UNSPECIFIED);
+            int childWidthSpec = ViewGroup.getChildMeasureSpec(
+                parentWidthSpec,
+                parent.getPaddingLeft() + parent.getPaddingRight(),
+                childView.getLayoutParams().width
+            );
+            int childHeightSpec =
+                ViewGroup.getChildMeasureSpec(
+                    parentHeightSpec,
+                    parent.getPaddingTop() + parent.getPaddingBottom(),
+                    childView.getLayoutParams().height
+                );
+            childView.measure(childWidthSpec, childHeightSpec);
+            childView.layout(
+                0,
+                0,
+                childView.getMeasuredWidth(),
+                childView.getMeasuredHeight()
+            );
+            firstLevelHeaderHeight = childView.getBottom();
+        }
+        return firstLevelHeaderHeight;
+    }
+
+    @Override
+    public boolean isSecondLevelHeader(Integer childAtContactPosition) {
+        return getItem(childAtContactPosition) instanceof RoutePointsInfo;
+    }
+
+    @Override
+    public boolean isFirstLevelHeader(Integer childAtContactPosition) {
+        return getItem(childAtContactPosition) instanceof Debtor;
+    }
+
+    private final class OuterGroupViewHolder extends RecyclerView.ViewHolder {
         private final TextView id;
         private final TextView title;
         private final TextView overDueReceivable;
         private final TextView commonReceivable;
-        private final ViewGroup root;
+        final ViewGroup root;
 
         public OuterGroupViewHolder(@NonNull View itemView) {
             super(itemView);
@@ -195,11 +268,12 @@ class MyDiffUtil extends DiffUtil.ItemCallback<ReceivableInfo> {
                 return oldItem.getId().equals(newItem.getId());
             } else if (oldItem instanceof RoutePointsInfo) {
                 boolean isSameOuterGroup = ((RoutePointsInfo)oldItem).getDebtorId().equals(((RoutePointsInfo)newItem).getDebtorId());
-                return isSameOuterGroup && ((RoutePointsInfo) oldItem).getId().equals(((RoutePointsInfo) newItem).getId());
+                if (!isSameOuterGroup) return false;
+                return oldItem.getId().equals(newItem.getId());
             } else {
                 boolean isSameOuterGroup = ((DeliveryPointWithInvoices)oldItem).getDebtorId().equals(((DeliveryPointWithInvoices)newItem).getDebtorId());
                 boolean isSameInnerGroup = ((DeliveryPointWithInvoices)oldItem).getRouteId().equals(((DeliveryPointWithInvoices)newItem).getRouteId());
-                boolean areItemsTheSame = ((DeliveryPointWithInvoices)oldItem).getId().equals(((DeliveryPointWithInvoices)newItem).getId());
+                boolean areItemsTheSame = oldItem.getId().equals(newItem.getId());
                 return isSameOuterGroup && isSameInnerGroup && areItemsTheSame;
             }
         } else return false;

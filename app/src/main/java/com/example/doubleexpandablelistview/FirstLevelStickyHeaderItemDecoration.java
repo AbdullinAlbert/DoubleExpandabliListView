@@ -1,25 +1,23 @@
 package com.example.doubleexpandablelistview;
 
 import android.graphics.Canvas;
-import android.util.Log;
 import android.view.LayoutInflater;
 import android.view.MotionEvent;
 import android.view.View;
 import android.view.ViewGroup;
-import android.widget.TextView;
 
 import androidx.annotation.NonNull;
 import androidx.recyclerview.widget.RecyclerView;
 
-public class FirsLevelStickyHeaderItemDecoration extends RecyclerView.ItemDecoration {
+public class FirstLevelStickyHeaderItemDecoration extends RecyclerView.ItemDecoration {
     private final StickyHeaderInfoProvider stickyHeaderInfoProvider;
     private int mStickyHeaderHeight;
     private View mCurrentHeader;
-    private int mCurrentHeaderIndex;
+    private int mCurrentHeaderIndex = -1;
 
-    public static final String TAG = FirsLevelStickyHeaderItemDecoration.class.getSimpleName();
+    public static final String TAG = FirstLevelStickyHeaderItemDecoration.class.getSimpleName();
 
-    public FirsLevelStickyHeaderItemDecoration(RecyclerView recyclerView, @NonNull StickyHeaderInfoProvider stickHeaderHelper) {
+    public FirstLevelStickyHeaderItemDecoration(RecyclerView recyclerView, @NonNull StickyHeaderInfoProvider stickHeaderHelper) {
        this.stickyHeaderInfoProvider = stickHeaderHelper;
        recyclerView.addOnItemTouchListener(new RecyclerView.OnItemTouchListener() {
            @Override
@@ -61,9 +59,9 @@ public class FirsLevelStickyHeaderItemDecoration extends RecyclerView.ItemDecora
         int contactPoint = currentHeader.getBottom();
         View childInContact = getChildInContact(parent, contactPoint);
         if (childInContact == null) return;
-        if (stickyHeaderInfoProvider.isHeader(parent.getChildAdapterPosition(childInContact))) {
-            TextView textView = childInContact.findViewById(R.id.groupId);
-            Log.d(TAG, "onDrawOver: groupId = " + textView.getText());
+        int childPos = parent.getChildAdapterPosition(childInContact);
+        if (childPos == RecyclerView.NO_POSITION) return;
+        if (stickyHeaderInfoProvider.isHeader(childPos)) {
             moveHeader(c, currentHeader, childInContact);
             return;
         }
@@ -77,9 +75,9 @@ public class FirsLevelStickyHeaderItemDecoration extends RecyclerView.ItemDecora
         c.restore();
     }
 
-    private void moveHeader(Canvas c, View currentHeader, View previousHeader) {
+    private void moveHeader(Canvas c, View currentHeader, View nextOrPreviousHeader) {
         c.save();
-        int top = previousHeader.getTop();
+        int top = nextOrPreviousHeader.getTop();
         int height = currentHeader.getHeight();
         int dy = top - height;
         c.translate(0, dy);
@@ -91,6 +89,7 @@ public class FirsLevelStickyHeaderItemDecoration extends RecyclerView.ItemDecora
         View childInContact = null;
         for (int i = 0; i < parent.getChildCount(); i++) {
             View child = parent.getChildAt(i);
+            if (child == null) continue;
             if (child.getBottom() > contactPoint) {
                 if (child.getTop() <= contactPoint) {
                     childInContact = child;
@@ -125,7 +124,7 @@ public class FirsLevelStickyHeaderItemDecoration extends RecyclerView.ItemDecora
     public interface StickyHeaderInfoProvider {
 
         /**
-         * This method gets called by {@link FirsLevelStickyHeaderItemDecoration} to fetch the position of the header item in the adapter
+         * This method gets called by {@link FirstLevelStickyHeaderItemDecoration} to fetch the position of the header item in the adapter
          * that is used for (represents) item at specified position.
          * @param itemPosition int. Adapter's position of the item for which to do the search of the position of the header item.
          * @return int. Position of the header item in the adapter.
@@ -133,21 +132,21 @@ public class FirsLevelStickyHeaderItemDecoration extends RecyclerView.ItemDecora
         int getHeaderPositionForItem(int itemPosition);
 
         /**
-         * This method gets called by {@link FirsLevelStickyHeaderItemDecoration} to get layout resource id for the header item at specified adapter's position.
+         * This method gets called by {@link FirstLevelStickyHeaderItemDecoration} to get layout resource id for the header item at specified adapter's position.
          * @param headerPosition int. Position of the header item in the adapter.
          * @return int. Layout resource id.
          */
         int getHeaderLayout(int headerPosition);
 
         /**
-         * This method gets called by {@link FirsLevelStickyHeaderItemDecoration} to setup the header View.
+         * This method gets called by {@link FirstLevelStickyHeaderItemDecoration} to setup the header View.
          * @param header View. Header to set the data on.
          * @param headerPosition int. Position of the header item in the adapter.
          */
         void bindHeaderData(View header, int headerPosition);
 
         /**
-         * This method gets called by {@link FirsLevelStickyHeaderItemDecoration} to verify whether the item represents a header.
+         * This method gets called by {@link FirstLevelStickyHeaderItemDecoration} to verify whether the item represents a header.
          * @param itemPosition int.
          * @return true, if item at the specified adapter's position represents a header.
          */
