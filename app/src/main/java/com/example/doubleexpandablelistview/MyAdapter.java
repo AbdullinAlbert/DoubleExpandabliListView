@@ -1,5 +1,6 @@
 package com.example.doubleexpandablelistview;
 
+import android.util.Log;
 import android.view.LayoutInflater;
 import android.view.View;
 import android.view.ViewGroup;
@@ -184,6 +185,19 @@ public class MyAdapter extends ListAdapter<ReceivableInfo, RecyclerView.ViewHold
     @Override
     public boolean isFirstLevelHeader(Integer childAtContactPosition) {
         return getItem(childAtContactPosition) instanceof Debtor;
+    }
+
+    @Override
+    public boolean isNeedHideSecondLevelGroupStickyHeader(Integer itemPosition) {
+        List<ReceivableInfo> list = getCurrentList();
+        Log.d(TAG, "isNeedHideSecondLevelGroupStickyHeader: instance of Debtor = " + (list.get(itemPosition) instanceof Debtor));
+        Log.d(TAG, "isNeedHideSecondLevelGroupStickyHeader: instance of DeliveryPointWithInvoices = " + (list.get(itemPosition) instanceof DeliveryPointWithInvoices));
+        Log.d(TAG, "isNeedHideSecondLevelGroupStickyHeader: instance of RoutePointsInfo = " + (list.get(itemPosition) instanceof RoutePointsInfo));
+        Log.d(TAG, "isNeedHideSecondLevelGroupStickyHeader: instance +1  of Debtor = " + (list.get(itemPosition + 1) instanceof Debtor));
+        return (list.get(itemPosition) instanceof Debtor
+            || list.get(itemPosition)  instanceof DeliveryPointWithInvoices
+            || list.get(itemPosition) instanceof RoutePointsInfo)
+            && list.get(itemPosition + 1) instanceof Debtor;
     }
 
     private final class OuterGroupViewHolder extends RecyclerView.ViewHolder {

@@ -119,7 +119,6 @@ public class MainActivity extends AppCompatActivity implements SelectedGroupCall
                 Log.d(MainActivity.class.getSimpleName(), "clickedGroup: " + e.getLocalizedMessage());
             }
         }
-        recyclerView.invalidateItemDecorations();
         myAdapter.submitList(newAdapterList);
     }
 
