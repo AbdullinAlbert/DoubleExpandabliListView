@@ -56,6 +56,8 @@ public class SecondLevelStickyHeaderItemDecoration extends RecyclerView.ItemDeco
         int childPos = parent.getChildAdapterPosition(child);
         if (childPos == RecyclerView.NO_POSITION) return RecyclerView.NO_POSITION;
         if (mSecondLevelStickyHeaderInfoProvider.isNeedHideSecondLevelGroupStickyHeader(childPos)) return RecyclerView.NO_POSITION;
+        if (mSecondLevelStickyHeaderInfoProvider.isLastChildOfSecondGroup(childPos)
+            && child.getBottom() < firstLevelStickyHeaderHeight) return RecyclerView.NO_POSITION;
         if (mSecondLevelStickyHeaderInfoProvider.isFirstLevelHeader(childPos)) return  1;
         else if (mSecondLevelStickyHeaderInfoProvider.isSecondLevelHeader( childPos+ 1)) {
             View childAtFirstPosition = parent.getChildAt(1);
@@ -140,5 +142,6 @@ public class SecondLevelStickyHeaderItemDecoration extends RecyclerView.ItemDeco
         boolean isSecondLevelHeader(Integer childAtContactPosition);
         boolean isFirstLevelHeader(Integer childAtContactPosition);
         boolean isNeedHideSecondLevelGroupStickyHeader(Integer itemPosition);
+        boolean isLastChildOfSecondGroup(Integer itemPosition);
     }
 }

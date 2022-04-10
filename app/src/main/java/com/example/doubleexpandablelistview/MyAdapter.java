@@ -189,15 +189,14 @@ public class MyAdapter extends ListAdapter<ReceivableInfo, RecyclerView.ViewHold
 
     @Override
     public boolean isNeedHideSecondLevelGroupStickyHeader(Integer itemPosition) {
-        List<ReceivableInfo> list = getCurrentList();
-        Log.d(TAG, "isNeedHideSecondLevelGroupStickyHeader: instance of Debtor = " + (list.get(itemPosition) instanceof Debtor));
-        Log.d(TAG, "isNeedHideSecondLevelGroupStickyHeader: instance of DeliveryPointWithInvoices = " + (list.get(itemPosition) instanceof DeliveryPointWithInvoices));
-        Log.d(TAG, "isNeedHideSecondLevelGroupStickyHeader: instance of RoutePointsInfo = " + (list.get(itemPosition) instanceof RoutePointsInfo));
-        Log.d(TAG, "isNeedHideSecondLevelGroupStickyHeader: instance +1  of Debtor = " + (list.get(itemPosition + 1) instanceof Debtor));
-        return (list.get(itemPosition) instanceof Debtor
-            || list.get(itemPosition)  instanceof DeliveryPointWithInvoices
-            || list.get(itemPosition) instanceof RoutePointsInfo)
-            && list.get(itemPosition + 1) instanceof Debtor;
+        return (getItem(itemPosition) instanceof Debtor || getItem(itemPosition) instanceof RoutePointsInfo)
+            && getItem(itemPosition + 1) instanceof Debtor;
+    }
+
+    @Override
+    public boolean isLastChildOfSecondGroup(Integer itemPosition) {
+        return getItem(itemPosition) instanceof DeliveryPointWithInvoices &&
+            getItem(itemPosition + 1) instanceof Debtor;
     }
 
     private final class OuterGroupViewHolder extends RecyclerView.ViewHolder {
