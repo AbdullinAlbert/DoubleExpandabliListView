@@ -13,6 +13,7 @@ import java.util.List;
 public class MainActivity extends AppCompatActivity implements SelectedGroupCallback{
 
     private MyAdapter myAdapter;
+    private int currentOpenedFirstLevelGroupId = -1;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -92,13 +93,28 @@ public class MainActivity extends AppCompatActivity implements SelectedGroupCall
 
     @Override
     public void outerGroupWasClicked(Integer groupId, boolean isOpen) {
+        List<ReceivableInfo> newAdapterList = getCopyOfAdapterList(myAdapter.getCurrentList());
+        if (currentOpenedFirstLevelGroupId != groupId && currentOpenedFirstLevelGroupId != -1) {
+            int removePosition = 0;
+            while (removePosition < myAdapter.getCurrentList().size()) {
+                ReceivableInfo receivableInfo = myAdapter.getCurrentList().get(removePosition);
+                removePosition++;
+                if (receivableInfo instanceof Debtor && receivableInfo.getId().equals(currentOpenedFirstLevelGroupId)) break;
+            }
+            if (newAdapterList.get(removePosition-1) instanceof Debtor) {
+                Debtor debtor = (Debtor) newAdapterList.get(removePosition-1);
+                debtor.setOpen(false);
+                while (removePosition < newAdapterList.size() && !(newAdapterList.get(removePosition) instanceof Debtor))
+                    newAdapterList.remove(removePosition);
+
+            }
+        }
         int insertPosition = 0;
-        while (insertPosition < myAdapter.getCurrentList().size()) {
-            ReceivableInfo receivableInfo = myAdapter.getCurrentList().get(insertPosition);
+        while (insertPosition < newAdapterList.size()) {
+            ReceivableInfo receivableInfo = newAdapterList.get(insertPosition);
             insertPosition++;
             if (receivableInfo instanceof Debtor && receivableInfo.getId().equals(groupId)) break;
         }
-        List<ReceivableInfo> newAdapterList = getCopyOfAdapterList(myAdapter.getCurrentList());
         if (newAdapterList.get(insertPosition-1) instanceof Debtor) {
             Debtor debtor = (Debtor) newAdapterList.get(insertPosition-1);
             debtor.setOpen(isOpen);
@@ -110,6 +126,7 @@ public class MainActivity extends AppCompatActivity implements SelectedGroupCall
                     newAdapterList.addAll(insertPosition, debtor.getRoutePointsInfo().get(0).getDeliveryPointWithInvoices());
                     insertPosition += debtor.getRoutePointsInfo().get(0).getDeliveryPointWithInvoices().size();
                     newAdapterList.add(insertPosition, debtor.getRoutePointsInfo().get(1));
+                    currentOpenedFirstLevelGroupId = groupId;
                 }
                 else
                     while (insertPosition < newAdapterList.size() && !(newAdapterList.get(insertPosition) instanceof Debtor))
