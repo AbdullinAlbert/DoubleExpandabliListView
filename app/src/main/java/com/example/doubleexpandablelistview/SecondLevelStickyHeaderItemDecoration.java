@@ -3,6 +3,7 @@ package com.example.doubleexpandablelistview;
 import android.graphics.Canvas;
 import android.util.Log;
 import android.view.LayoutInflater;
+import android.view.MotionEvent;
 import android.view.View;
 import android.view.ViewGroup;
 
@@ -13,11 +14,43 @@ public class SecondLevelStickyHeaderItemDecoration extends RecyclerView.ItemDeco
     private final SecondLevelStickyHeaderInfoProvider mSecondLevelStickyHeaderInfoProvider;
     private int mCurrentSecondLevelHeaderIndex = -1;
     private View mCurrentHeader;
+    private int mSecondLevelStickyHeaderTop = 0;
+    private int mSecondLevelStickyHeaderBottom = 0;
 
     public static final String TAG = SecondLevelStickyHeaderItemDecoration.class.getSimpleName();
 
-    public SecondLevelStickyHeaderItemDecoration(SecondLevelStickyHeaderInfoProvider secondLevelStickyHeaderInfoProvider) {
+    public SecondLevelStickyHeaderItemDecoration(
+        RecyclerView recyclerView,
+        SecondLevelStickyHeaderInfoProvider secondLevelStickyHeaderInfoProvider
+    ) {
         mSecondLevelStickyHeaderInfoProvider = secondLevelStickyHeaderInfoProvider;
+        recyclerView.addOnItemTouchListener(new RecyclerView.OnItemTouchListener() {
+            @Override
+            public boolean onInterceptTouchEvent(@NonNull RecyclerView rv, @NonNull MotionEvent e) {
+                if (mSecondLevelStickyHeaderTop <= e.getY() && e.getY() <= mSecondLevelStickyHeaderBottom) {
+                    View clickedView = rv.findChildViewUnder(e.getX(), e.getY());
+                    if (clickedView != null) {
+                        int viewPosition = rv.getChildAdapterPosition(clickedView);
+                        if (viewPosition == RecyclerView.NO_POSITION) return false;
+                        int headerPosition = mSecondLevelStickyHeaderInfoProvider.getSecondLevelHeaderPositionForItem(viewPosition);
+                        if (headerPosition == RecyclerView.NO_POSITION) return false;
+                        mSecondLevelStickyHeaderInfoProvider.secondLevelStickyHeaderWasClicked(headerPosition);
+                        return true;
+                    }
+                }
+                return false;
+            }
+
+            @Override
+            public void onTouchEvent(@NonNull RecyclerView rv, @NonNull MotionEvent e) {
+
+            }
+
+            @Override
+            public void onRequestDisallowInterceptTouchEvent(boolean disallowIntercept) {
+
+            }
+        });
     }
 
 
@@ -27,16 +60,12 @@ public class SecondLevelStickyHeaderItemDecoration extends RecyclerView.ItemDeco
         int firstLevelStickyHeaderHeight = mSecondLevelStickyHeaderInfoProvider.getFirstLevelHeaderHeight(parent);
         int necessaryPosition = getNecessaryPosition(parent, firstLevelStickyHeaderHeight);
         if (necessaryPosition == RecyclerView.NO_POSITION) return;
-        Log.d(TAG, "onDrawOver: necessaryPosition = " + necessaryPosition);
         View necessaryChild = parent.getChildAt(necessaryPosition);
         if (necessaryChild == null) return;
         int secondChildAdapterPosition = parent.getChildAdapterPosition(necessaryChild);
         if (secondChildAdapterPosition == RecyclerView.NO_POSITION) return;
         View currentSecondLevelHeader = getHeaderViewForItem(secondChildAdapterPosition, parent);
-        if (currentSecondLevelHeader == null) {
-            Log.d(TAG, "onDrawOver: currentSecondLevelHeader is null");
-            return;
-        }
+        if (currentSecondLevelHeader == null) return;
         fixLayoutSize(parent, currentSecondLevelHeader, firstLevelStickyHeaderHeight);
         int contactPosition = currentSecondLevelHeader.getBottom();
         View childInContact = getChildInContact(parent, contactPosition);
@@ -99,7 +128,6 @@ public class SecondLevelStickyHeaderItemDecoration extends RecyclerView.ItemDeco
     }
 
     private void fixLayoutSize(ViewGroup parent, View childView, int top) {
-        Log.d(TAG, "fixLayoutSize: top = " + top);
         int parentWidthSpec = View.MeasureSpec.makeMeasureSpec(parent.getWidth(), View.MeasureSpec.EXACTLY);
         int parentHeightSpec = View.MeasureSpec.makeMeasureSpec(parent.getHeight(), View.MeasureSpec.UNSPECIFIED);
         int childWidthSpec = ViewGroup.getChildMeasureSpec(
@@ -114,18 +142,17 @@ public class SecondLevelStickyHeaderItemDecoration extends RecyclerView.ItemDeco
                 childView.getLayoutParams().height);
         childView.measure(childWidthSpec, childHeightSpec);
         childView.layout(
-            0,
-            top,
+            parent.getLeft(),
+            mSecondLevelStickyHeaderTop = top,
             childView.getMeasuredWidth(),
-            top + childView.getMeasuredHeight()
+            mSecondLevelStickyHeaderBottom = top + childView.getMeasuredHeight()
         );
     }
 
     private View getHeaderViewForItem(int itemPosition, RecyclerView parent) {
         int headerPosition = mSecondLevelStickyHeaderInfoProvider.getSecondLevelHeaderPositionForItem(itemPosition);
-        if (headerPosition == -1) return null;
+        if (headerPosition == RecyclerView.NO_POSITION) return null;
         if (mCurrentSecondLevelHeaderIndex != headerPosition || mCurrentHeader == null) {
-            Log.d(TAG, "getHeaderViewForItem: mCurrentSecondLevelHeaderIndex =" + headerPosition);
             int layoutResId = mSecondLevelStickyHeaderInfoProvider.getSecondLevelHeaderLayout(headerPosition);
             mCurrentHeader = LayoutInflater.from(parent.getContext()).inflate(layoutResId, parent, false);
             mSecondLevelStickyHeaderInfoProvider.bindSecondLevelHeaderWithData(mCurrentHeader, headerPosition);
@@ -143,5 +170,6 @@ public class SecondLevelStickyHeaderItemDecoration extends RecyclerView.ItemDeco
         boolean isFirstLevelHeader(Integer childAtContactPosition);
         boolean isNeedHideSecondLevelGroupStickyHeader(Integer itemPosition);
         boolean isLastChildOfSecondGroup(Integer itemPosition);
+        void secondLevelStickyHeaderWasClicked(Integer itemPosition);
     }
 }

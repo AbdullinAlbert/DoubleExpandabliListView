@@ -13,13 +13,12 @@ import java.util.List;
 public class MainActivity extends AppCompatActivity implements SelectedGroupCallback{
 
     private MyAdapter myAdapter;
-    private RecyclerView recyclerView;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_main);
-        recyclerView = findViewById(R.id.recyclerView);
+        RecyclerView recyclerView = findViewById(R.id.recyclerView);
         myAdapter = new MyAdapter(this);
         recyclerView.addItemDecoration(new FirstLevelStickyHeaderItemDecoration(recyclerView, myAdapter));
         recyclerView.addItemDecoration(
@@ -28,7 +27,7 @@ public class MainActivity extends AppCompatActivity implements SelectedGroupCall
                 AppCompatResources.getDrawable(this, R.drawable.dp_invoice_divider)
             )
         );
-        recyclerView.addItemDecoration(new SecondLevelStickyHeaderItemDecoration(myAdapter));
+        recyclerView.addItemDecoration(new SecondLevelStickyHeaderItemDecoration(recyclerView, myAdapter));
         recyclerView.setAdapter(myAdapter);
         myAdapter.submitList(getAdapterList());
     }
@@ -36,7 +35,7 @@ public class MainActivity extends AppCompatActivity implements SelectedGroupCall
     private List<ReceivableInfo> getAdapterList() {
         int headerCount = 0;
         List<ReceivableInfo> adapterList = new ArrayList<>();
-        for (int i = 0; i < 50; i++)
+        for (int i = 0; i < 10; i++)
             adapterList.add(getDebtorHeaderGroup(headerCount++));
         return adapterList;
     }
@@ -132,7 +131,7 @@ public class MainActivity extends AppCompatActivity implements SelectedGroupCall
         }
         List<ReceivableInfo> newAdapterList = getCopyOfAdapterList(myAdapter.getCurrentList());
         if (newAdapterList.get(insertPosition) instanceof RoutePointsInfo) {
-            insertPosition += ((RoutePointsInfo) newAdapterList.get(insertPosition)).getId().equals(innerGroupId)
+            insertPosition += newAdapterList.get(insertPosition).getId().equals(innerGroupId)
                 ? 1
                 : ((RoutePointsInfo)newAdapterList.get(insertPosition)).isOpen()
                     ? ((RoutePointsInfo)newAdapterList.get(insertPosition)).getDeliveryPointWithInvoices().size() + 2

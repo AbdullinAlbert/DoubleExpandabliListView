@@ -119,7 +119,7 @@ public class MyAdapter extends ListAdapter<ReceivableInfo, RecyclerView.ViewHold
 
     @Override
     public int getSecondLevelHeaderPositionForItem(Integer itemPosition) {
-        int pos = -1;
+        int pos = RecyclerView.NO_POSITION;
         int i = itemPosition;
         boolean isSecondLevelHeaderFind = false;
         while (i >= 0 && !isSecondLevelHeaderFind) {
@@ -189,6 +189,7 @@ public class MyAdapter extends ListAdapter<ReceivableInfo, RecyclerView.ViewHold
 
     @Override
     public boolean isNeedHideSecondLevelGroupStickyHeader(Integer itemPosition) {
+        if (itemPosition + 1 >= getCurrentList().size()) return true;
         return (getItem(itemPosition) instanceof Debtor || getItem(itemPosition) instanceof RoutePointsInfo)
             && getItem(itemPosition + 1) instanceof Debtor;
     }
@@ -199,7 +200,19 @@ public class MyAdapter extends ListAdapter<ReceivableInfo, RecyclerView.ViewHold
             getItem(itemPosition + 1) instanceof Debtor;
     }
 
-    private final class OuterGroupViewHolder extends RecyclerView.ViewHolder {
+    @Override
+    public void secondLevelStickyHeaderWasClicked(Integer itemPosition) {
+        if (getItem(itemPosition) instanceof RoutePointsInfo) {
+            RoutePointsInfo routePointsInfo = (RoutePointsInfo) getItem(itemPosition);
+            if (mSelectedGroupCallback != null) mSelectedGroupCallback.innerGroupWasClicked(
+                routePointsInfo.getDebtorId(),
+                routePointsInfo.getId(),
+                !routePointsInfo.isOpen()
+            );
+        }
+    }
+
+    private static final class OuterGroupViewHolder extends RecyclerView.ViewHolder {
         private final TextView id;
         private final TextView title;
         private final TextView overDueReceivable;
@@ -303,13 +316,13 @@ class MyDiffUtil extends DiffUtil.ItemCallback<ReceivableInfo> {
                 return oldItem.getId().equals(newItem.getId()) && (((Debtor) oldItem).isOpen() == ((Debtor) newItem).isOpen());
             } else if (oldItem instanceof RoutePointsInfo) {
                 boolean isSameOuterGroup = ((RoutePointsInfo)oldItem).getDebtorId().equals(((RoutePointsInfo)newItem).getDebtorId());
-                boolean isSameInnerGroup = ((RoutePointsInfo) oldItem).getId().equals(((RoutePointsInfo) newItem).getId());
+                boolean isSameInnerGroup = oldItem.getId().equals((newItem).getId());
                 boolean openEquality = ((RoutePointsInfo) oldItem).isOpen() == ((RoutePointsInfo) newItem).isOpen();
                 return isSameOuterGroup && isSameInnerGroup && openEquality;
             } else {
                 boolean isSameOuterGroup = ((DeliveryPointWithInvoices)oldItem).getDebtorId().equals(((DeliveryPointWithInvoices)newItem).getDebtorId());
                 boolean isSameInnerGroup = ((DeliveryPointWithInvoices)oldItem).getRouteId().equals(((DeliveryPointWithInvoices)newItem).getRouteId());
-                boolean areItemsTheSame = ((DeliveryPointWithInvoices)oldItem).getId().equals(((DeliveryPointWithInvoices)newItem).getId());
+                boolean areItemsTheSame = (oldItem).getId().equals((newItem).getId());
                 return isSameOuterGroup && isSameInnerGroup && areItemsTheSame;
             }
         } else return false;
