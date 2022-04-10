@@ -1,6 +1,5 @@
 package com.example.doubleexpandablelistview;
 
-import android.util.Log;
 import android.view.LayoutInflater;
 import android.view.View;
 import android.view.ViewGroup;
@@ -8,11 +7,14 @@ import android.widget.TextView;
 
 import androidx.annotation.NonNull;
 import androidx.appcompat.content.res.AppCompatResources;
+import androidx.core.content.ContextCompat;
 import androidx.recyclerview.widget.DiffUtil;
 import androidx.recyclerview.widget.ListAdapter;
 import androidx.recyclerview.widget.RecyclerView;
 
+import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
 
 public class MyAdapter extends ListAdapter<ReceivableInfo, RecyclerView.ViewHolder>
     implements FirstLevelStickyHeaderItemDecoration.StickyHeaderInfoProvider,
@@ -24,6 +26,8 @@ public class MyAdapter extends ListAdapter<ReceivableInfo, RecyclerView.ViewHold
     private final int INNER_GROUP_CHILD_VIEW_TYPE = 2;
     private final SelectedGroupCallback mSelectedGroupCallback;
     private int firstLevelHeaderHeight = 0;
+    private int currentPositionById = -1;
+    private final Map<Integer, InnerGroupChildViewHolder> listOfHolders = new HashMap<>();
 
     public static final String TAG = MyAdapter.class.getSimpleName();
 
@@ -55,9 +59,38 @@ public class MyAdapter extends ListAdapter<ReceivableInfo, RecyclerView.ViewHold
                 break;
             case INNER_GROUP_CHILD_VIEW_TYPE:
                 InnerGroupChildViewHolder innerGroupChildViewHolder = (InnerGroupChildViewHolder) holder;
-                innerGroupChildViewHolder.bind((DeliveryPointWithInvoices) getItem(position));
+                innerGroupChildViewHolder.bind((DeliveryPointWithInvoices) getItem(position), getItem(position).getId() == currentPositionById);
+                listOfHolders.put(getItem(position).getId(), innerGroupChildViewHolder);
                 break;
         }
+    }
+
+    public void updateCurrentSelectedPosition(@NonNull InnerGroupChildViewHolder holder) {
+        int newCurrentPos = -1;
+        for (Integer key : listOfHolders.keySet()) {
+            InnerGroupChildViewHolder helperHolder = listOfHolders.get(key);
+            if (helperHolder == null) return;
+            if (helperHolder.equals(holder)) {
+                newCurrentPos = key;
+                if (currentPositionById != -1) {
+                    helperHolder = listOfHolders.get(currentPositionById);
+                    if (helperHolder != null) helperHolder.setPositionAsUnselected();
+                    else return;
+                }
+                helperHolder = listOfHolders.get(newCurrentPos);
+                if (helperHolder != null) {
+                    helperHolder.setPositionAsSelected();
+                    currentPositionById = newCurrentPos;
+                    break;
+                }
+                else return;
+            }
+        }
+    }
+
+    public void resetSelectedReceivable() {
+        listOfHolders.clear();
+        currentPositionById = -1;
     }
 
     @Override
@@ -259,7 +292,7 @@ public class MyAdapter extends ListAdapter<ReceivableInfo, RecyclerView.ViewHold
         }
     }
 
-    private static final class InnerGroupChildViewHolder extends RecyclerView.ViewHolder {
+    public static final class InnerGroupChildViewHolder extends RecyclerView.ViewHolder {
         private final RecyclerView invoiceList;
         private InvoiceAdapter invoiceAdapter;
 
@@ -268,14 +301,23 @@ public class MyAdapter extends ListAdapter<ReceivableInfo, RecyclerView.ViewHold
             invoiceList = itemView.findViewById(R.id.invoiceList);
         }
 
-        public void bind(DeliveryPointWithInvoices deliveryPointWithInvoices) {
+        public void bind(DeliveryPointWithInvoices deliveryPointWithInvoices, boolean isSelected) {
             if (invoiceAdapter == null) invoiceAdapter = new InvoiceAdapter(deliveryPointWithInvoices.getInvoices());
             InvoiceItemDecoration invoiceItemDecoration = new InvoiceItemDecoration(
                 AppCompatResources.getDrawable(itemView.getContext(), R.drawable.invoice_divider),
                 invoiceAdapter
             );
+            invoiceList.setBackgroundColor(ContextCompat.getColor(invoiceList.getContext(), isSelected ? R.color.purple_200 : R.color.white));
             invoiceList.addItemDecoration(invoiceItemDecoration);
             invoiceList.setAdapter(invoiceAdapter);
+        }
+
+        void setPositionAsUnselected() {
+            invoiceList.setBackgroundColor(ContextCompat.getColor(invoiceList.getContext(), R.color.white));
+        }
+
+        void setPositionAsSelected() {
+            invoiceList.setBackgroundColor(ContextCompat.getColor(invoiceList.getContext(), R.color.purple_200));
         }
     }
 

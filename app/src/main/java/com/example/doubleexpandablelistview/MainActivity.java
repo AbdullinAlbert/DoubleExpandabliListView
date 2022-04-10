@@ -1,11 +1,15 @@
 package com.example.doubleexpandablelistview;
 
+import androidx.annotation.NonNull;
 import androidx.appcompat.app.AppCompatActivity;
 import androidx.appcompat.content.res.AppCompatResources;
 import androidx.recyclerview.widget.RecyclerView;
 
 import android.os.Bundle;
 import android.util.Log;
+import android.view.GestureDetector;
+import android.view.MotionEvent;
+import android.view.View;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -14,6 +18,7 @@ public class MainActivity extends AppCompatActivity implements SelectedGroupCall
 
     private MyAdapter myAdapter;
     private int currentOpenedFirstLevelGroupId = -1;
+    private static int id = 0;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -30,6 +35,27 @@ public class MainActivity extends AppCompatActivity implements SelectedGroupCall
         );
         recyclerView.addItemDecoration(new SecondLevelStickyHeaderItemDecoration(recyclerView, myAdapter));
         recyclerView.setAdapter(myAdapter);
+        recyclerView.addOnItemTouchListener(new RecyclerView.SimpleOnItemTouchListener() {
+
+            private final GestureDetector gestureDetector = new GestureDetector(
+                MainActivity.this,
+                new GestureDetector.SimpleOnGestureListener() {
+                    @Override
+                    public boolean onSingleTapUp(MotionEvent e) { return true; }
+                }
+            );
+
+            @Override
+            public boolean onInterceptTouchEvent(@NonNull RecyclerView rv, @NonNull MotionEvent e) {
+                View view =  rv.findChildViewUnder(e.getX(), e.getY());
+                if (view != null) {
+                    RecyclerView.ViewHolder vh = rv.getChildViewHolder(view);
+                    if (vh instanceof MyAdapter.InnerGroupChildViewHolder && gestureDetector.onTouchEvent(e))
+                        myAdapter.updateCurrentSelectedPosition((MyAdapter.InnerGroupChildViewHolder) vh);
+                }
+                return false;
+            }
+        });
         myAdapter.submitList(getAdapterList());
     }
 
@@ -56,7 +82,7 @@ public class MainActivity extends AppCompatActivity implements SelectedGroupCall
     private List<DeliveryPointWithInvoices> getDPWithInvoices(Integer debtorId, Integer routeId) {
         List<DeliveryPointWithInvoices> generatedList = new ArrayList<>();
         for (int i = 0; i < 5; i++) {
-            generatedList.add(new DeliveryPointWithInvoices(debtorId, routeId, i, getInvoices()));
+            generatedList.add(new DeliveryPointWithInvoices(debtorId, routeId, id++, getInvoices()));
         }
         return generatedList;
     }
@@ -127,6 +153,7 @@ public class MainActivity extends AppCompatActivity implements SelectedGroupCall
                     insertPosition += debtor.getRoutePointsInfo().get(0).getDeliveryPointWithInvoices().size();
                     newAdapterList.add(insertPosition, debtor.getRoutePointsInfo().get(1));
                     currentOpenedFirstLevelGroupId = groupId;
+                    myAdapter.resetSelectedReceivable();
                 }
                 else
                     while (insertPosition < newAdapterList.size() && !(newAdapterList.get(insertPosition) instanceof Debtor))
