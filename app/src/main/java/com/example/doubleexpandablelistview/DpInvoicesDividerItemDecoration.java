@@ -31,7 +31,7 @@ public class DpInvoicesDividerItemDecoration extends RecyclerView.ItemDecoration
             if (colorItemDividerHelper.isNeedAddColorDivider(adapterPosition)) {
                 final int right = parent.getWidth();
                 final int left = 0;
-                final int top = view.getBottom();
+                final int top = view.getBottom() - invoiceDividerDrawable.getIntrinsicHeight();
                 final int bottom = top + invoiceDividerDrawable.getIntrinsicHeight();
                 invoiceDividerDrawable.setBounds(new Rect(left, top, right, bottom));
                 invoiceDividerDrawable.draw(c);
